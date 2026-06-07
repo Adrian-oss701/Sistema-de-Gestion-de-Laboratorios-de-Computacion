@@ -1,1 +1,1 @@
-# Sistema de Gestión
+# Sistema de Gestión de Laboratorios de Computación
