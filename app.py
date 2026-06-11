@@ -4,11 +4,14 @@ from flask_jwt_extended import (
     create_access_token,
     jwt_required
 )
+from flask_mysqldb import MySQL
+from sistema_laboratorios.backend import config
 
 app = Flask(__name__)
 
 app.config["JWT_SECRET_KEY"] = "umsa_programacion_web_iii"
-
+app.config.from_object(config)
+mysql = MySQL(app)
 jwt = JWTManager(app)
 
 laboratorios = [
@@ -32,11 +35,11 @@ def home():
 def login_page():
     return render_template('login.html')
 
-@app.route('/laboratorios')
+@app.route('/laboratorios_html')
 def laboratorios_page():
     return render_template('laboratorios.html')
 
-@app.route('/reservas')
+@app.route('/reservas_html')
 def reservas_page():
     return render_template('reservas.html')
 
@@ -67,7 +70,19 @@ def login():
 
 @app.route('/api/laboratorios', methods=['GET'])
 def obtener_laboratorios():
-
+    cursor= mysql.connection.cursor()
+    sql = 'select * from laboratorios'
+    cursor.execute(sql)
+    data=cursor.fetchall()
+    laboratorios=[]
+    for fila in data:
+        laboratorios.append({
+            "id":fila[0],
+            "nombre": fila[1],
+            "ubicacion": fila[2],
+            "capacidad": fila[3],
+            "estado": fila[4]
+        })
     return jsonify(laboratorios)
 
 @app.route('/api/laboratorios', methods=['POST'])
@@ -106,6 +121,26 @@ def panel_admin():
     return jsonify({
         "mensaje": "Acceso autorizado"
     })
+
+@app.route('/api/reservas',methods=['GET'])
+def obtener_reservas():
+    cursor= mysql.connection.cursor()
+    sql = 'select * from reservas'
+    cursor.execute(sql)
+    data=cursor.fetchall()
+    cursor.close()
+    reservas=[]
+    for fila in data:
+        reservas.append({
+            "id":fila[0],
+            "id_laboratorio": fila[1],
+            "id_usuario": fila[2],
+            "fecha": str(fila[3]),
+            "hora_ini": str(fila[4]),
+            "hora_fin": str(fila[5]),
+            "estado": fila[6]
+        })
+    return jsonify(reservas)
 
 if __name__ == '__main__':
     app.run(debug=True)
