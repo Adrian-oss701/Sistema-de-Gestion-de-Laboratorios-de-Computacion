@@ -310,3 +310,124 @@ async function consultarLaboratorios() {
     
   } catch (e) {}
 }
+
+async function abrirFormularioReserva(id, nombreLab, capacidad) {
+  laboratorioSeleccionado = { id, nombre: nombreLab, capacidad };
+  
+  document.querySelectorAll('.lab-card').forEach(c => c.classList.remove('selected'));
+  if(event.currentTarget) event.currentTarget.classList.add('selected');
+  
+  document.getElementById("txtLabElegido").textContent = nombreLab;
+  document.getElementById("txtFechaElegida").textContent = fechaSeleccionada;
+  document.getElementById("labReservaId").value = id;
+  
+  document.getElementById("horaInicioReserva").value = "";
+  document.getElementById("horaFinReserva").value = "";
+
+  try {
+    const res = await fetch(`/reservas`, { headers: { "Authorization": "Bearer " + token } }); 
+    const todasLasReservas = await res.json();
+    
+    const ocupadas = todasLasReservas.filter(r => r.laboratorio_id === id && r.fecha === fechaSeleccionada && r.estado !== 'RECHAZADA');
+    const badgeContainer = document.getElementById("listaHorariosOcupados");
+    
+    if(ocupadas.length === 0){
+      badgeContainer.innerHTML = `<span class="text-success small"><i class="bi bi-check-circle-fill me-1"></i>Todo el día libre</span>`;
+    } else {
+      badgeContainer.innerHTML = ocupadas.map(o => `
+        <span class="badge badge-ocupado py-2 px-3 text-dark fs-7">
+          <i class="bi bi-lock-fill text-muted me-1"></i>${o.hora_inicio.substring(0,5)} - ${o.hora_fin.substring(0,5)}
+        </span>
+      `).join("");
+    }
+  } catch(err) {
+    document.getElementById("listaHorariosOcupados").innerHTML = `<span class="text-muted small">Sin datos de ocupación actual</span>`;
+  }
+
+  const panel = document.getElementById("panelReserva");
+  panel.style.display = "block";
+  panel.classList.add("fade-in");
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function registrarReserva() {
+  const horaInicio = document.getElementById("horaInicioReserva").value;
+  const horaFin = document.getElementById("horaFinReserva").value;
+  const motivo = document.getElementById("motivoReserva").value.trim();
+  const labId = document.getElementById("labReservaId").value;
+
+  if (!horaInicio || !horaFin) return alert("Indica hora de inicio y fin.");
+  if (horaInicio >= horaFin) return alert("La hora de inicio debe ser menor a la hora de fin.");
+  if (!motivo) return alert("Describe el motivo de la reserva.");
+  
+  const body = {
+    fecha: fechaSeleccionada,
+    hora_inicio: horaInicio,
+    hora_fin: horaFin,
+    motivo: motivo,
+    laboratorio_id: parseInt(labId)
+  };
+  
+  try {
+    const res = await fetch("/reservas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify(body)
+    });
+    
+    if (res.ok) {
+      alert("¡Reserva solicitada exitosamente!");
+      document.getElementById("panelReserva").style.display = "none";
+      document.getElementById("resultadoLabs").style.display = "none";
+      document.getElementById("motivoReserva").value = "";
+      document.getElementById("fechaConsulta").value = "";
+    } else {
+      alert("Error al procesar la reserva.");
+    }
+  } catch (e) {}
+}
+
+async function cargarLaboratoriosSelect() {
+  try {
+    const res = await fetch("/laboratorios");
+    const datos = await res.json();
+    document.getElementById("labIncidencia").innerHTML = datos.map(l => `<option value="${l.id}">${l.nombre} - ${l.ubicacion}</option>`).join("");
+  } catch (e) {}
+}
+
+async function reportarIncidencia() {
+  const descripcion = document.getElementById("descripcionIncidencia").value.trim();
+  const labId = document.getElementById("labIncidencia").value;
+  const prioridad = document.getElementById("prioridadIncidencia").value;
+  
+  if (!descripcion) return alert("Escribe una descripción del problema.");
+  
+  const body = {
+    descripcion: descripcion,
+    prioridad: prioridad,
+    laboratorio_id: parseInt(labId)
+  };
+  
+  try {
+    const res = await fetch("/incidencias", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify(body)
+    });
+    
+    if (res.ok) {
+      alert("¡Incidencia registrada en soporte técnico!");
+      document.getElementById("descripcionIncidencia").value = "";
+      document.getElementById("prioridadIncidencia").value = "MEDIA";
+    } else {
+      alert("No se pudo enviar el reporte.");
+    }
+  } catch (e) {}
+}
+
+if (!esAdmin) {
+  cargarLaboratoriosSelect();
+}
+</script>
+</body>
+</html>
