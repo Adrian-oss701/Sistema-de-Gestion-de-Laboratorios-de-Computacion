@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Buscador de Incidencias</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+    .navbar { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .table-container { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .table > :not(caption) > * > * { vertical-align: middle; }
+    .badge { font-weight: 500; padding: 0.5em 0.75em; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark px-4 py-3">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/dashboard"><i class="bi bi-arrow-left-short me-1"></i> Volver</a>
+    <span class="text-white fw-bold"><i class="bi bi-search me-2"></i> Explorador de Incidencias</span>
+  </div>
+</nav>
+
+<div class="container mt-4">
+
+  <div class="card mb-4 border-danger border-top border-4">
+    <div class="card-body">
+      <h6 class="card-title text-danger fw-bold mb-3"><i class="bi bi-calendar-event me-2"></i>Buscar Incidencias por Fecha</h6>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <input type="date" id="fechaBusqueda" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-danger w-100" onclick="buscarPorFecha()">
+            <i class="bi bi-search me-1"></i> Buscar
+          </button>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-outline-secondary w-100" onclick="cargarTodas()">
+            <i class="bi bi-list me-1"></i> Ver Todas
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="panelEdicion" class="card mb-4 border-warning border-top border-4" style="display: none;">
+    <div class="card-body">
+      <h6 class="card-title text-warning text-dark fw-bold mb-3" id="formTitulo"><i class="bi bi-pencil-square me-2"></i>Actualizar Estado de Incidencia</h6>
+      <div class="row g-3">
+        <div class="col-md-5"><label class="small text-muted">Descripción Técnica</label><input id="descripcion" class="form-control"></div>
+        <div class="col-md-2"><label class="small text-muted">Prioridad</label>
+          <select id="prioridad" class="form-select">
+            <option value="BAJA">BAJA</option>
+            <option value="MEDIA">MEDIA</option>
+            <option value="ALTA">ALTA</option>
+            <option value="CRITICA">CRITICA</option>
+          </select>
+        </div>
+        <div class="col-md-2"><label class="small text-muted">Estado</label>
+          <select id="estado_inc" class="form-select">
+            <option value="ABIERTA">ABIERTA</option>
+            <option value="EN_PROCESO">EN_PROCESO</option>
+            <option value="CERRADA">CERRADA</option>
+          </select>
+        </div>
+        <div class="col-md-3"><label class="small text-muted">Laboratorio</label><select id="laboratorio_id" class="form-select"></select></div>
+        <div class="col-12 text-end">
+          <button class="btn btn-light me-2" onclick="limpiar()">Cancelar</button>
+          <button class="btn btn-warning px-4" onclick="guardar()"><i class="bi bi-save me-1"></i> Actualizar Reporte</button>
+        </div>
+      </div>
+      <input type="hidden" id="editId">
+    </div>
+  </div>
+
+  <div class="table-container">
+    <h6 class="mb-3 text-secondary"><i class="bi bi-table me-2"></i>Resultados de Incidencias</h6>
+    <div class="table-responsive">
+      <table class="table table-hover border-top">
+        <thead class="table-light text-secondary">
+          <tr><th>ID</th><th>Descripción</th><th>Prioridad</th><th>Estado</th><th>Fecha</th><th>Usuario</th><th>Laboratorio</th><th id="accionesHeader" class="text-end" style="display:none;">Acciones</th></tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+const rol = localStorage.getItem("rol");
+if (!token) window.location = "/login";
+
+const esAdmin = rol === "ADMIN";
+if (esAdmin) document.getElementById("accionesHeader").style.display = "table-cell";
+
+async function cargarTodas() {
+  const res = await fetch("/incidencias", { headers: { "Authorization": "Bearer " + token } });
+  mostrarTabla(await res.json());
+}
+
+async function buscarPorFecha() {
+  const fecha = document.getElementById("fechaBusqueda").value;
+  if (!fecha) return alert("Selecciona una fecha");
+  const res = await fetch(`/incidencias/por-fecha?fecha=${fecha}`, { headers: { "Authorization": "Bearer " + token } });
+  mostrarTabla(await res.json());
+}
+
+function mostrarTabla(datos) {
+  let html = "";
+  if(datos.length === 0) html = `<tr><td colspan="8" class="text-center py-4">No se encontraron registros.</td></tr>`;
+  datos.forEach(i => {
+    const pColor = i.prioridad === "CRITICA" ? "danger" : i.prioridad === "ALTA" ? "warning text-dark" : i.prioridad === "MEDIA" ? "info text-dark" : "secondary";
+    const eColor = i.estado === "CERRADA" ? "success" : i.estado === "EN_PROCESO" ? "warning text-dark" : "danger";
+    html += `<tr>
+      <td><span class="text-muted fw-bold">#${i.id}</span></td>
+      <td>${i.descripcion}</td>
+      <td><span class="badge bg-${pColor}">${i.prioridad}</span></td>
+      <td><span class="badge rounded-pill bg-${eColor}">${i.estado}</span></td>
+      <td><i class="bi bi-clock text-muted me-1"></i>${i.fecha || "-"}</td>
+      <td>${i.usuario_nombre}</td>
+      <td><i class="bi bi-building text-muted me-1"></i>${i.laboratorio_nombre}</td>
+      ${esAdmin ? `<td class="text-end"><button class="btn btn-sm btn-outline-primary me-1" onclick='editar(${JSON.stringify(i)})'><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" onclick="eliminar(${i.id})"><i class="bi bi-trash"></i></button></td>` : `<td style="display:none;"></td>`}
+    </tr>`;
+  });
+  document.getElementById("tabla").innerHTML = html;
+}
+
+async function cargarSelectores() {
+  const rl = await fetch("/laboratorios").then(r => r.json());
+  document.getElementById("laboratorio_id").innerHTML = rl.map(l => `<option value="${l.id}">${l.nombre}</option>`).join("");
+}
+
+async function guardar() {
+  if(!esAdmin) return;
+  const id = document.getElementById("editId").value;
+  const body = {
+    descripcion: document.getElementById("descripcion").value,
+    prioridad: document.getElementById("prioridad").value,
+    estado: document.getElementById("estado_inc").value,
+    laboratorio_id: parseInt(document.getElementById("laboratorio_id").value)
+  };
+  
+  const res = await fetch(`/incidencias/${id}`, {
+    method: "PUT", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  alert(data.mensaje); limpiar(); cargarTodas();
+}
+
+function editar(i) {
+  if(!esAdmin) return;
+  document.getElementById("editId").value = i.id;
+  document.getElementById("descripcion").value = i.descripcion;
+  document.getElementById("prioridad").value = i.prioridad;
+  document.getElementById("estado_inc").value = i.estado;
+  document.getElementById("laboratorio_id").value = i.laboratorio_id;
+  
+  const panel = document.getElementById("panelEdicion");
+  panel.style.display = "block";
+  panel.classList.add("fade-in");
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function eliminar(id) {
+  if(!esAdmin) return;
+  if (!confirm("¿Eliminar esta incidencia?")) return;
+  await fetch(`/incidencias/${id}`, { method: "DELETE", headers: { "Authorization": "Bearer " + token } });
+  cargarTodas();
+}
+
+function limpiar() {
+  document.getElementById("panelEdicion").style.display = "none";
+}
+
+if(esAdmin) cargarSelectores();
+cargarTodas();
+</script>
+</body>
+</html>
