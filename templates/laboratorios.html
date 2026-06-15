@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Laboratorios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+    .navbar { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .table-container { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;}
+    .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .table > :not(caption) > * > * { vertical-align: middle; }
+    .badge { font-weight: 500; padding: 0.5em 0.75em; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark px-4 py-3">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/dashboard"><i class="bi bi-arrow-left-short me-1"></i> Volver al Dashboard</a>
+    <span class="text-white fw-bold"><i class="bi bi-building me-2"></i> Gestión de Laboratorios</span>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <div class="row mb-4">
+    <div class="col-md-12" id="adminPanel" style="display: none;">
+      <div class="card border-primary border-top border-4 mb-4 fade-in">
+        <div class="card-body">
+          <h6 class="card-title text-primary fw-bold" id="formTitulo"><i class="bi bi-plus-circle me-2"></i>Nuevo Laboratorio</h6>
+          <input type="hidden" id="editId">
+          <div class="row g-2 mt-2">
+            <div class="col-md-3">
+              <div class="form-floating">
+                <input id="nombre" class="form-control" placeholder="Nombre">
+                <label for="nombre">Nombre</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating">
+                <input id="ubicacion" class="form-control" placeholder="Ubicación">
+                <label for="ubicacion">Ubicación</label>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-floating">
+                <input id="capacidad" class="form-control" placeholder="Capacidad" type="number">
+                <label for="capacidad">Capacidad</label>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-floating">
+                <select id="estado" class="form-select">
+                  <option value="DISPONIBLE">DISPONIBLE</option>
+                  <option value="OCUPADO">OCUPADO</option>
+                  <option value="MANTENIMIENTO">MANTENIMIENTO</option>
+                  <option value="FUERA_SERVICIO">FUERA_SERVICIO</option>
+                </select>
+                <label for="estado">Estado</label>
+              </div>
+            </div>
+            <div class="col-md-2 mt-3 text-end d-flex align-items-center">
+              <button class="btn btn-light me-1 btn-sm" onclick="limpiar()" title="Limpiar formulario"><i class="bi bi-x-lg"></i></button>
+              <button class="btn btn-primary w-100" onclick="guardar()"><i class="bi bi-save me-1"></i> Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-container fade-in">
+    <h5 class="mb-3 text-secondary"><i class="bi bi-list-ul me-2"></i>Listado de Laboratorios</h5>
+    <div class="table-responsive">
+      <table class="table table-hover border-top">
+        <thead class="table-light text-secondary">
+          <tr><th>ID</th><th>Nombre</th><th>Ubicación</th><th>Capacidad</th><th>Estado</th><th id="accionesHeader" class="text-end" style="display:none;">Acciones</th></tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+const rol = localStorage.getItem("rol");
+if (!token) window.location = "/login";
+
+const esAdmin = rol === "ADMIN";
+
+if (esAdmin) {
+  document.getElementById("adminPanel").style.display = "block";
+  document.getElementById("accionesHeader").style.display = "table-cell";
+}
+
+async function cargar() {
+  try {
+    const res = await fetch("/laboratorios");
+    const datos = await res.json();
+    let html = "";
+    datos.forEach(l => {
+      let badgeColor = l.estado === 'DISPONIBLE' ? 'success' : l.estado === 'OCUPADO' ? 'warning text-dark' : 'danger';
+      html += `<tr>
+        <td><span class="text-muted fw-bold">#${l.id}</span></td>
+        <td class="fw-bold">${l.nombre}</td>
+        <td><i class="bi bi-geo-alt text-muted me-1"></i>${l.ubicacion}</td>
+        <td>${l.capacidad} pax</td>
+        <td><span class="badge rounded-pill bg-${badgeColor}">${l.estado}</span></td>
+        ${esAdmin ? `
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-primary me-1" onclick='editar(${JSON.stringify(l)})'><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger" onclick="eliminar(${l.id})"><i class="bi bi-trash"></i></button>
+        </td>` : `<td style="display:none;"></td>`}
+      </tr>`;
+    });
+    document.getElementById("tabla").innerHTML = html;
+  } catch (error) {
+    console.error("Error al cargar laboratorios:", error);
+  }
+}
+
+async function guardar() {
+  if(!esAdmin) return;
+  const id = document.getElementById("editId").value;
+  const body = {
+    nombre: document.getElementById("nombre").value,
+    ubicacion: document.getElementById("ubicacion").value,
+    capacidad: parseInt(document.getElementById("capacidad").value),
+    estado: document.getElementById("estado").value
+  };
+  
+  if(!body.nombre || !body.ubicacion || isNaN(body.capacidad)) {
+    return alert("Por favor, completa todos los campos correctamente.");
+  }
+
+  const url = id ? `/laboratorios/${id}` : "/laboratorios";
+  const method = id ? "PUT" : "POST";
+  
+  try {
+    const res = await fetch(url, {
+      method, 
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    alert(data.mensaje || "Operación realizada con éxito"); 
+    limpiar(); 
+    cargar();
+  } catch (error) {
+    alert("Error al guardar el laboratorio.");
+  }
+}
+
+function editar(l) {
+  if(!esAdmin) return;
+  document.getElementById("editId").value = l.id;
+  document.getElementById("nombre").value = l.nombre;
+  document.getElementById("ubicacion").value = l.ubicacion;
+  document.getElementById("capacidad").value = l.capacidad;
+  document.getElementById("estado").value = l.estado;
+  document.getElementById("formTitulo").innerHTML = `<i class="bi bi-pencil-square me-2"></i>Editar Laboratorio #${l.id}`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function eliminar(id) {
+  if(!esAdmin) return;
+  if (!confirm("¿Eliminar este laboratorio?")) return;
+  try {
+    const res = await fetch(`/laboratorios/${id}`, {
+      method: "DELETE", headers: { "Authorization": "Bearer " + token }
+    });
+    const data = await res.json(); 
+    alert(data.mensaje || "Laboratorio eliminado."); 
+    cargar();
+  } catch (error) {
+    alert("Error al eliminar el laboratorio.");
+  }
+}
+
+function limpiar() {
+  ["editId","nombre","ubicacion","capacidad"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("estado").value = "DISPONIBLE";
+  document.getElementById("formTitulo").innerHTML = `<i class="bi bi-plus-circle me-2"></i>Nuevo Laboratorio`;
+}
+
+cargar();
+</script>
+</body>
+</html>
