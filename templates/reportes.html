@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Laboratorios</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+    .navbar { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .table-container { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;}
+    .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .table > :not(caption) > * > * { vertical-align: middle; }
+    .badge { font-weight: 500; padding: 0.5em 0.75em; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark px-4 py-3">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/dashboard"><i class="bi bi-arrow-left-short me-1"></i> Volver al Dashboard</a>
+    <span class="text-white fw-bold"><i class="bi bi-building me-2"></i> Reportes y Consultas</span>
+  </div>
+</nav>
+
+<div class="container mt-5">
+  <div class="row g-4">
+    
+    
+    
+    <div class="col-md-6 col-xl-4">
+     <div class="card border-0 shadow-sm h-100 card-hover">
+      <div class="card-body">
+       <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+         <h5 class="fw-bold mb-1">Laboratorios y su cantidad de Reservas</h5>
+         <span class="badge bg-primary-subtle text-primary"> Consulta</span>
+        </div>
+        <div class="icon-box bg-primary bg-opacity-10 text-primary">
+         <i class="bi bi-building"></i>
+        </div>
+       </div>
+       <p class="text-muted small">
+       Visualiza los laboratorios y la cantidad de reservas
+       </p>
+       <hr>
+        <a href="/reportes-ver/reporte_1" class="btn btn-primary w-100">
+                <i class="bi bi-table me-1"></i>Ver
+        </a>
+       </div>
+      </div>
+    </div>
+    
+    <div class="col-md-6 col-xl-4">
+     <div class="card border-0 shadow-sm h-100 card-hover">
+      <div class="card-body">
+       <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+         <h5 class="fw-bold mb-1">Laboratorios y sus Incidencias</h5>
+         <span class="badge bg-primary-subtle text-primary"> Consulta</span>
+        </div>
+        <div class="icon-box bg-primary bg-opacity-10 text-primary">
+         <i class="bi bi-building"></i>
+        </div>
+       </div>
+       <p class="text-muted small">
+       Revisa cuantas incidencias tienen los laboratorios
+       </p>
+       <hr>
+        <a href="/reportes-ver/reporte_2" class="btn btn-primary w-100">
+                <i class="bi bi-table me-1"></i>Ver
+        </a>
+       </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+     <div class="card border-0 shadow-sm h-100 card-hover">
+      <div class="card-body">
+       <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+         <h5 class="fw-bold mb-1">Laboratorios Disponibles</h5>
+         <span class="badge bg-primary-subtle text-primary"> Consulta</span>
+        </div>
+        <div class="icon-box bg-primary bg-opacity-10 text-primary">
+         <i class="bi bi-building"></i>
+        </div>
+       </div>
+       <p class="text-muted small">
+       Visualiza que Laboratorios estan listos para ser reservados
+       </p>
+       <hr>
+        <a href="/reportes-ver/reporte_3" class="btn btn-primary w-100">
+                <i class="bi bi-table me-1"></i>Ver
+        </a>
+       </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+     <div class="card border-0 shadow-sm h-100 card-hover">
+      <div class="card-body">
+       <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+         <h5 class="fw-bold mb-1">Laboratorios segun capacidad</h5>
+         <span class="badge bg-primary-subtle text-primary"> Consulta</span>
+        </div>
+        <div class="icon-box bg-primary bg-opacity-10 text-primary">
+         <i class="bi bi-building"></i>
+        </div>
+       </div>
+       <p class="text-muted small">
+       Sabes cuanta capacidad necesitas, filtra laboratorios segun una capacidad
+       </p>
+       <hr>
+        <a href="/reportes-ver/reporte_4" class="btn btn-primary w-100">
+                <i class="bi bi-table me-1"></i>Ver
+        </a>
+       </div>
+      </div>
+    </div>
+
+
+   
+
+    <div class="col-md-6 col-lg-4" id="panelUsuarios" style="display: none;">
+      <div class="card card-hover shadow-sm h-100 border-secondary border-2">
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-3">
+            <h5 class="card-title fw-bold">Usuarios (Admin)</h5>
+            <div class="icon-box bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-people"></i></div>
+          </div>
+          <p class="card-text text-muted small">Gestión total de cuentas y roles.</p>
+          <a href="/usuarios-ver" class="btn btn-outline-secondary w-100 mt-2">Gestionar</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+const rol = localStorage.getItem("rol");
+if (!token) window.location = "/login";
+
+const esAdmin = rol === "ADMIN";
+
+if (esAdmin) {
+  document.getElementById("adminPanel").style.display = "block";
+  document.getElementById("accionesHeader").style.display = "table-cell";
+}
+
+
+
+
+
+
+cargar();
+</script>
+</body>
+</html>
