@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Laboratorios</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+    .navbar { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .table-container { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;}
+    .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .table > :not(caption) > * > * { vertical-align: middle; }
+    .badge { font-weight: 500; padding: 0.5em 0.75em; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark px-4 py-3">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/reportes-ver"><i class="bi bi-arrow-left-short me-1"></i> Volver a Reportes</a>
+    <span class="text-white fw-bold"><i class="bi bi-building me-2"></i> Incidencias por Laboratorio</span>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <div class="row mb-4">
+    
+
+  <div class="table-container">
+    <h5 class="mb-3 text-secondary">Listado</h5>
+    <div class="table-responsive">
+      <table class="table table-hover border-top">
+        <thead class="table-light text-secondary">
+          <tr><th>ID</th><th>Nombre</th><th>Ubicación</th><th>Capacidad</th><th>Estado</th><th class="text-end">Cantidad Incidencias</th></tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const token = localStorage.getItem("token");
+const rol = localStorage.getItem("rol");
+if (!token) window.location = "/login";
+
+const esAdmin = rol === "ADMIN";
+
+
+async function cargarDatos() {
+    try {
+        const resp = await fetch(
+            "/reportes/reporte_2",
+            {
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            }
+        );
+        const datos = await resp.json();
+        const tabla = document.getElementById("tabla");
+        tabla.innerHTML = "";
+        datos.forEach(lab => {
+            let badgeEstado = "";
+            switch(lab.estado){
+                case "DISPONIBLE":
+                    badgeEstado = '<span class="badge bg-success">Disponible</span>';
+                    break;
+                case "OCUPADO":
+                    badgeEstado = '<span class="badge bg-warning text-dark">Ocupado</span>';
+                    break;
+                case "MANTENIMIENTO":
+                    badgeEstado = '<span class="badge bg-danger">Mantenimiento</span>';
+                    break;
+                default:
+                    badgeEstado = '<span class="badge bg-secondary">Fuera de servicio</span>';
+            }
+            tabla.innerHTML += `
+                <tr>
+                    <td>${lab.id}</td>
+                    <td>${lab.nombre}</td>
+                    <td>${lab.ubicacion}</td>
+                    <td>${lab.capacidad}</td>
+                    <td>${badgeEstado}</td>
+                    <td class="text-end fw-bold">
+                        ${lab.cantidad_incidencias}
+                    </td>
+                </tr>
+            `;
+        });
+    } catch(error) {
+        console.error(error);
+        alert("Error al cargar los datos");
+    }
+}
+cargarDatos();
+</script>
+</body>
+</html>
