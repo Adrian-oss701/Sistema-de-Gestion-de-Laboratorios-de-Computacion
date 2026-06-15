@@ -1,0 +1,16 @@
+MYSQL_HOST = '127.0.0.1'
+MYSQL_USER = 'root'
+MYSQL_PASSWORD = ''
+MYSQL_DB = 'bd_laboratorios'
+MYSQL_PORT = 3308
+
+JWT_SECRET_KEY = 'clave_secreta_laboratorios'
+
+
+class Config:
+    MYSQL_HOST = MYSQL_HOST
+    MYSQL_USER = MYSQL_USER
+    MYSQL_PASSWORD = MYSQL_PASSWORD
+    MYSQL_DB = MYSQL_DB
+    MYSQL_PORT = MYSQL_PORT
+    JWT_SECRET_KEY = JWT_SECRET_KEY
