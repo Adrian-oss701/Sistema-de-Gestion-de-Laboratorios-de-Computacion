@@ -39,5 +39,63 @@
     </div>
   </div>
 </div>
+
+<script>
+const token = localStorage.getItem("token");
+const rol = localStorage.getItem("rol");
+if (!token) window.location = "/login";
+
+const esAdmin = rol === "ADMIN";
+
+
+async function cargarDatos() {
+    try {
+        const resp = await fetch(
+            "/reportes/reporte_2",
+            {
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            }
+        );
+        const datos = await resp.json();
+        const tabla = document.getElementById("tabla");
+        tabla.innerHTML = "";
+        datos.forEach(lab => {
+            let badgeEstado = "";
+            switch(lab.estado){
+                case "DISPONIBLE":
+                    badgeEstado = '<span class="badge bg-success">Disponible</span>';
+                    break;
+                case "OCUPADO":
+                    badgeEstado = '<span class="badge bg-warning text-dark">Ocupado</span>';
+                    break;
+                case "MANTENIMIENTO":
+                    badgeEstado = '<span class="badge bg-danger">Mantenimiento</span>';
+                    break;
+                default:
+                    badgeEstado = '<span class="badge bg-secondary">Fuera de servicio</span>';
+            }
+            tabla.innerHTML += `
+                <tr>
+                    <td>${lab.id}</td>
+                    <td>${lab.nombre}</td>
+                    <td>${lab.ubicacion}</td>
+                    <td>${lab.capacidad}</td>
+                    <td>${badgeEstado}</td>
+                    <td class="text-end fw-bold">
+                        ${lab.cantidad_incidencias}
+                    </td>
+                </tr>
+            `;
+        });
+    } catch(error) {
+        console.error(error);
+        alert("Error al cargar los datos");
+    }
+}
+cargarDatos();
+</script>
+
 </body>
 </html>
