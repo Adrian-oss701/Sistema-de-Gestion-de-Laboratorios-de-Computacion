@@ -26,7 +26,6 @@ def disponibles():
     con = conectar()
     cur = con.cursor(dictionary=True)
     
-    # Si se envían horas, filtrar por conflicto de horario
     if hora_inicio and hora_fin:
         cur.execute("""
             SELECT * FROM laboratorio
@@ -79,7 +78,6 @@ def horarios_disponibles(id):
     reservas = cur.fetchall()
     con.close()
     
-    # Generar slots de 1 hora de 07:00 a 21:00
     slots = []
     for h in range(7, 21):
         inicio = f"{h:02d}:00"
